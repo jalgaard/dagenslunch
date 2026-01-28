@@ -3,68 +3,156 @@
 <html lang="sv">
 <head>
 <meta charset="UTF-8">
-<title>Dagens lunch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dagens lunch by PMO IT</title>
 <style>
-body {
-    font-family: Arial, sans-serif;
-    background: #f7f7f7;
-    padding: 20px;
-}
-h1 {
-    text-align: center;
-}
-.day {
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 30px;
-}
-.restaurant {
-    background: white;
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-}
-.header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-.header img {
-    width: 50px;
-    height: auto;
-}
+    :root {
+        --bg-color: #f4f5f7;
+        --card-bg: #ffffff;
+        --text-main: #172b4d;
+        --text-muted: #5e6c84;
+        --border-color: #ebecf0;
+        --shadow: 0 4px 8px rgba(0,0,0,0.1);
+        --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+        font-family: var(--font-stack);
+        background: var(--bg-color);
+        margin: 0;
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+        color: var(--text-main);
+    }
+
+    .container {
+        background: var(--card-bg);
+        width: 100%;
+        max-width: 600px;
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 40px;
+        box-sizing: border-box;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin: 0 0 8px 0;
+        font-weight: 700;
+        text-align: left;
+    }
+
+    .day-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 30px;
+    }
+
+    .restaurant-item {
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 24px;
+        margin-bottom: 24px;
+    }
+
+    .restaurant-item:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+
+    .header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        gap: 12px;
+    }
+
+    .logo-container {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .logo-container img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .header h2 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 700;
+    }
+
+    .menu-text {
+        font-size: 15px;
+        line-height: 1.5;
+        margin: 0;
+        color: #333;
+    }
+
+    .footer {
+        margin-top: 40px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 15px;
+        font-size: 11px;
+        color: #999;
+        text-align: left;
+    }
+
 </style>
 </head>
 <body>
 
-<h1>Dagens lunch by PMO IT</h1>
-<div class="day">ONSDAG</div>
+    <div class="container">
+        <h1>Dagens lunch by PMO IT</h1>
+        <div class="day-header">ONSDAG</div>
 
-
-    <div class="restaurant">
+        <div class="menu-list">
+            
+    <div class="restaurant-item">
         <div class="header">
-            <img src="https://res.cloudinary.com/emg-prod/image/upload/c_limit,h_100,w_200/v1/institutes/institute10621/logos/logo" alt="FEI Restaurang & Lounge">
+            <div class="logo-container">
+                <img src="https://res.cloudinary.com/emg-prod/image/upload/c_limit,h_100,w_200/v1/institutes/institute10621/logos/logo" alt="Logo">
+            </div>
             <h2>FEI Restaurang & Lounge</h2>
         </div>
-        <p>Wallenbergare, mos, rårörda lingon, ärter<br>Grillad rotselleri, rostad lökcreme, linssallad, sesam</p>
+        <p class="menu-text">Wallenbergare, mos, rårörda lingon, ärter<br>Grillad rotselleri, rostad lökcreme, linssallad, sesam</p>
     </div>
     
-    <div class="restaurant">
+    <div class="restaurant-item">
         <div class="header">
-            <img src="https://cirkelnstockholm.se/wp-content/uploads/2021/09/c_restaurang-S-150x150.png" alt="Restaurang Cirkeln">
+            <div class="logo-container">
+                <img src="https://cirkelnstockholm.se/wp-content/uploads/2021/09/c_restaurang-S-150x150.png" alt="Logo">
+            </div>
             <h2>Restaurang Cirkeln</h2>
         </div>
-        <p>Nötfärsbiff, stekt potatis, svampsås & broccoli.<br>Västerbottenostfylld strömming, potatispuré, skirat smör & lingon.</p>
+        <p class="menu-text">Nötfärsbiff, stekt potatis, svampsås & broccoli.<br>Västerbottenostfylld strömming, potatispuré, skirat smör & lingon.</p>
     </div>
     
-    <div class="restaurant">
+    <div class="restaurant-item">
         <div class="header">
-            <img src="https://www.restaurangrydbergs.se/wp-content/uploads/2025/03/Rydbergs-orange-transperant.png" alt="Restaurang Rydbergs">
+            <div class="logo-container">
+                <img src="https://www.restaurangrydbergs.se/wp-content/uploads/2025/03/Rydbergs-orange-transperant.png" alt="Logo">
+            </div>
             <h2>Restaurang Rydbergs</h2>
         </div>
-        <p>Wallenbergare – brynt smör, kalvsky, rårörda lingon, ärtor, potatispuré<br>Het ungersk Oxgulasch – chili, tomat, paprika, crème fraîche, kokt potatis<br>Pankopanerad Rödspättafilé – kapris, olivragu, brynt smör, gotlandspotatis<br>Pris: 155:-<br>Alltid inklusive salladsbuffé, hembakat bröd, smör, dryck samt kaffe/te.<br>Noga utvalda råvaror Alla rätter tillagas från grunden<br>av högsta kvalitet med kärlek & omsorg<br>DAGENS LUNCH<br>26-30 jan</p>
+        <p class="menu-text">Wallenbergare – brynt smör, kalvsky, rårörda lingon, ärtor, potatispuré<br>Het ungersk Oxgulasch – chili, tomat, paprika, crème fraîche, kokt potatis<br>Pankopanerad Rödspättafilé – kapris, olivragu, brynt smör, gotlandspotatis</p>
     </div>
     
+        </div>
+
+        <div class="footer">
+            Uppdaterad: 2026-01-28 14:41
+        </div>
+    </div>
 
 </body>
 </html>
