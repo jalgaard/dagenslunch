@@ -1,44 +1,70 @@
-<!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="refresh" content="1800">
+
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
 <title>Dagens lunch</title>
 <style>
-  :root { --fg:#111; --muted:#555; --card:#fff; --bg:#f6f7f9; }
-  @media (prefers-color-scheme: dark) {
-    :root { --fg:#eaeaea; --muted:#a0a0a0; --card:#171717; --bg:#0e0f11; }
-  }
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--fg);margin:0}
-  .wrap{max-width:760px;margin:32px auto;padding:0 16px}
-  .card{background:var(--card);border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:24px}
-  h1{margin:0 0 6px 0;font-size:28px}
-  h2{margin:0 0 16px 0;font-size:18px;letter-spacing:1px;color:#555}
-  .rest{padding:14px 0;border-top:1px solid rgba(128,128,128,.25)}
-  .rest:first-of-type{border-top:none}
-  .head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
-  .logo{width:28px;height:28px;object-fit:contain;border-radius:6px;flex:0 0 28px;filter:contrast(1.1)}
-  .name{font-weight:700}
-  .dish{margin:4px 0;line-height:1.5}
-  .footer{margin-top:10px;color:#666;font-size:12px}
+body {
+    font-family: Arial, sans-serif;
+    background: #f7f7f7;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+}
+.day {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 30px;
+}
+.restaurant {
+    background: white;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+.header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.header img {
+    width: 50px;
+    height: auto;
+}
 </style>
-<div class="wrap">
-  <div class="card">
-    <h1>Dagens lunch by PMO IT</h1>
-    <h2>ONSDAG</h2>
-    <div class='rest'>
-      <div class='head'>
-        <img class='logo' src='https://res.cloudinary.com/emg-prod/image/upload/c_limit,h_100,w_200/v1/institutes/institute10621/logos/logo' alt='FEI Restaurang & Lounge logotyp'>
-        <div class='name'>FEI Restaurang & Lounge</div>
-      </div>
-      <div class='dish'>Wallenbergare, mos, rårörda lingon, ärter<br>Grillad rotselleri, rostad lökcreme, linssallad, sesam</div>
+</head>
+<body>
+
+<h1>Dagens lunch by PMO IT</h1>
+<div class="day">ONSDAG</div>
+
+
+    <div class="restaurant">
+        <div class="header">
+            <img src="https://res.cloudinary.com/emg-prod/image/upload/c_limit,h_100,w_200/v1/institutes/institute10621/logos/logo" alt="FEI Restaurang & Lounge">
+            <h2>FEI Restaurang & Lounge</h2>
+        </div>
+        <p>Wallenbergare, mos, rårörda lingon, ärter<br>Grillad rotselleri, rostad lökcreme, linssallad, sesam</p>
     </div>
-    <div class='rest'>
-      <div class='head'>
-        <img class='logo' src='https://cirkelnstockholm.se/wp-content/uploads/2021/09/c_restaurang-S-150x150.png' alt='Restaurang Cirkeln logotyp'>
-        <div class='name'>Restaurang Cirkeln</div>
-      </div>
-      <div class='dish'>Nötfärsbiff, stekt potatis, svampsås & broccoli.<br>Västerbottenostfylld strömming, potatispuré, skirat smör & lingon</div>
+    
+    <div class="restaurant">
+        <div class="header">
+            <img src="https://cirkelnstockholm.se/wp-content/uploads/2021/09/c_restaurang-S-150x150.png" alt="Restaurang Cirkeln">
+            <h2>Restaurang Cirkeln</h2>
+        </div>
+        <p>Nötfärsbiff, stekt potatis, svampsås & broccoli.<br>Västerbottenostfylld strömming, potatispuré, skirat smör & lingon.</p>
     </div>
-    <div class="footer">Uppdaterad: 2026-01-28 13:57 · Tidszon: Europe/Stockholm</div>
-  </div>
-</div>
+    
+    <div class="restaurant">
+        <div class="header">
+            <img src="Rydbergs-orange-transperant.png" alt="Restaurang Rydbergs">
+            <h2>Restaurang Rydbergs</h2>
+        </div>
+        <p>Wallenbergare – brynt smör, kalvsky, rårörda lingon, ärtor, potatispuré<br>Het ungersk Oxgulasch – chili, tomat, paprika, crème fraîche, kokt potatis<br>Pankopanerad Rödspättafilé – kapris, olivragu, brynt smör, gotlandspotatis<br>Pris: 155:-<br>Alltid inklusive salladsbuffé, hembakat bröd, smör, dryck samt kaffe/te.<br>Noga utvalda råvaror Alla rätter tillagas från grunden<br>av högsta kvalitet med kärlek & omsorg<br>DAGENS LUNCH<br>26-30 jan</p>
+    </div>
+    
+
+</body>
+</html>
