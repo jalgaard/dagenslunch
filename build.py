@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 # =====================
-# KONFIG
+# KONFIGURATON
 # =====================
 
 OUTPUT_FILE = "index.html"
@@ -50,15 +50,17 @@ TIMESTAMP_STR = now.strftime("%Y-%m-%d %H:%M")
 # =====================
 
 def clean_lines(text):
-    # Klipp bort "Pris:" och allt efter det (för Rydbergs PDF-städning)
-    if "Pris:" in text:
-        text = text.split("Pris:")[0]
+    # Klipp bort allt från och med "Pris:" (oavsett stor/liten bokstav)
+    # Detta städar bort sidfoten på Rydbergs meny
+    split_match = re.search(r"(Pris:|Pris\s*\d)", text, re.IGNORECASE)
+    if split_match:
+        text = text[:split_match.start()]
         
     lines = [line.strip() for line in text.split("\n") if line.strip()]
     return "<br>".join(lines)
 
 # =====================
-# FEI + CIRKELN
+# HÄMTA MENYER (HTML)
 # =====================
 
 def fetch_html_menu(url):
@@ -68,11 +70,11 @@ def fetch_html_menu(url):
         soup = BeautifulSoup(r.text, "html.parser")
         return soup.get_text(separator="\n")
     except Exception as e:
-        print(f"Error fetching HTML from {url}: {e}")
+        print(f"⚠️  Fel vid hämtning av {url}: {e}")
         return ""
 
 # =====================
-# RYDBERGS (PDF)
+# HÄMTA MENYER (PDF)
 # =====================
 
 def fetch_rydbergs_pdf_text():
@@ -87,27 +89,32 @@ def fetch_rydbergs_pdf_text():
                 break
 
         if not pdf_link:
+            print("⚠️  Hittade ingen PDF-länk på Rydbergs hemsida.")
             return ""
 
         if pdf_link.startswith("/"):
             pdf_link = "https://www.restaurangrydbergs.se" + pdf_link
 
+        print(f"   Hittade PDF: {pdf_link}")
         pdf_data = requests.get(pdf_link, timeout=15)
+        
+        # Spara temporärt för analys
         pdf_path = Path("rydbergs.pdf")
         pdf_path.write_bytes(pdf_data.content)
 
         text = ""
         with pdfplumber.open(pdf_path) as pdf:
             for page in pdf.pages:
-                if page.extract_text():
-                    text += page.extract_text() + "\n"
+                extracted = page.extract_text()
+                if extracted:
+                    text += extracted + "\n"
         return text
     except Exception as e:
-        print(f"Error fetching PDF: {e}")
+        print(f"⚠️  Fel vid PDF-hantering: {e}")
         return ""
 
 # =====================
-# PARSING
+# PARSING LOGIK
 # =====================
 
 def extract_today_menu(raw_text):
@@ -124,13 +131,15 @@ def extract_today_menu(raw_text):
     return clean_lines(match.group(1))
 
 # =====================
-# BYGG HTML
+# HUVUDPROGRAM
 # =====================
 
 html_blocks = []
 
+print(f"🚀 Startar uppdatering för: {TODAY}...")
+
 for r in RESTAURANTS:
-    print(f"Hämtar meny för {r['name']}...")
+    print(f"→ Bearbetar {r['name']}...")
     if r["type"] == "html":
         raw = fetch_html_menu(r["url"])
     else:
@@ -138,7 +147,7 @@ for r in RESTAURANTS:
 
     lunch = extract_today_menu(raw)
 
-    # HTML-struktur för varje restaurang-rad
+    # Ny HTML-struktur som matchar designönskemålet
     block = f"""
     <div class="restaurant-item">
         <div class="header">
@@ -153,7 +162,7 @@ for r in RESTAURANTS:
     html_blocks.append(block)
 
 # =====================
-# SLUTLIG HTML (DESIGN)
+# SKAPA INDEX.HTML
 # =====================
 
 html = f"""
@@ -262,6 +271,7 @@ html = f"""
         padding-top: 15px;
         font-size: 11px;
         color: #999;
+        text-align: left;
     }}
 
 </style>
@@ -277,7 +287,7 @@ html = f"""
         </div>
 
         <div class="footer">
-            Uppdaterad: {TIMESTAMP_STR} - Tidszon: Europe/Stockholm
+            Uppdaterad: {TIMESTAMP_STR}
         </div>
     </div>
 
@@ -286,4 +296,4 @@ html = f"""
 """
 
 Path(OUTPUT_FILE).write_text(html, encoding="utf-8")
-print("index.html uppdaterad och klar! ✅")
+print("✅ index.html är uppdaterad! Öppna filen för att se resultatet.")
