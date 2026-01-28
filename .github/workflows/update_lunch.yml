@@ -1,0 +1,35 @@
+on:
+  schedule:
+    # Körs kl 06:00 UTC (ca 07:00 eller 08:00 svensk tid) måndag-fredag
+    - cron: '0 6 * * 1-5'
+  workflow_dispatch: # Gör att du kan köra den manuellt via en knapp
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checka ut koden
+        uses: actions/checkout@v4
+
+      - name: Installera Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Installera beroenden
+        run: |
+          pip install -r requirements.txt
+
+      - name: Kör lunch-skriptet
+        run: python build.py
+
+      - name: Spara ändringar (Commit & Push)
+        run: |
+          git config --global user.name "Lunch-Bot"
+          git config --global user.email "bot@noreply.github.com"
+          git add index.html
+          # Committa bara om det finns ändringar
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Uppdaterade lunchen" && git push)
