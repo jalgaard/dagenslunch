@@ -2,8 +2,11 @@ import requests
 from bs4 import BeautifulSoup
 import pdfplumber
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import re
 from pathlib import Path
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # =====================
 # KONFIGURATON
@@ -40,10 +43,28 @@ WEEKDAYS = {
     4: "FREDAG"
 }
 
-now = datetime.now()
+STOCKHOLM_TZ = ZoneInfo("Europe/Stockholm")
+now = datetime.now(STOCKHOLM_TZ)
 today_index = now.weekday()
 TODAY = WEEKDAYS.get(today_index, None)
 TIMESTAMP_STR = now.strftime("%Y-%m-%d %H:%M")
+
+# Gemensam HTTP-session med retries. Minskar risken att ett tillfälligt
+# nätverksfel hos en restaurang publicerar en tom/felaktig sida.
+SESSION = requests.Session()
+SESSION.headers.update({
+    "User-Agent": "Mozilla/5.0 (compatible; DagensLunchBot/1.0)"
+})
+retry = Retry(
+    total=3,
+    connect=3,
+    read=3,
+    backoff_factor=1,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["GET"],
+)
+SESSION.mount("https://", HTTPAdapter(max_retries=retry))
+SESSION.mount("http://", HTTPAdapter(max_retries=retry))
 
 # =====================
 # HJÄLPFUNKTIONER
@@ -65,7 +86,7 @@ def clean_lines(text):
 
 def fetch_html_menu(url):
     try:
-        r = requests.get(url, timeout=15)
+        r = SESSION.get(url, timeout=20)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         return soup.get_text(separator="\n")
@@ -79,7 +100,8 @@ def fetch_html_menu(url):
 
 def fetch_rydbergs_pdf_text():
     try:
-        page = requests.get("https://www.restaurangrydbergs.se/", timeout=15)
+        page = SESSION.get("https://www.restaurangrydbergs.se/", timeout=20)
+        page.raise_for_status()
         soup = BeautifulSoup(page.text, "html.parser")
 
         pdf_link = None
@@ -96,7 +118,8 @@ def fetch_rydbergs_pdf_text():
             pdf_link = "https://www.restaurangrydbergs.se" + pdf_link
 
         print(f"   Hittade PDF: {pdf_link}")
-        pdf_data = requests.get(pdf_link, timeout=15)
+        pdf_data = SESSION.get(pdf_link, timeout=20)
+        pdf_data.raise_for_status()
         
         # Spara temporärt för analys
         pdf_path = Path("rydbergs.pdf")
@@ -135,8 +158,9 @@ def extract_today_menu(raw_text):
 # =====================
 
 html_blocks = []
+errors = []
 
-print(f"🚀 Startar uppdatering för: {TODAY}...")
+print(f"🚀 Startar uppdatering för: {TODAY} ({TIMESTAMP_STR}, Europe/Stockholm)...")
 
 for r in RESTAURANTS:
     print(f"→ Bearbetar {r['name']}...")
@@ -145,7 +169,14 @@ for r in RESTAURANTS:
     else:
         raw = fetch_rydbergs_pdf_text()
 
+    if not raw.strip():
+        errors.append(f"{r['name']}: kunde inte hämta källan")
+        continue
+
     lunch = extract_today_menu(raw)
+    if lunch == "Ingen meny hittades för idag.":
+        errors.append(f"{r['name']}: dagens meny kunde inte hittas i källan")
+        continue
 
     # Ny HTML-struktur som matchar designönskemålet
     block = f"""
@@ -160,6 +191,13 @@ for r in RESTAURANTS:
     </div>
     """
     html_blocks.append(block)
+
+# Publicera inte en halv eller tom sida. Då får nästa schemalagda körning
+# försöka igen i stället för att ersätta en fungerande meny.
+if errors:
+    for error in errors:
+        print(f"❌ {error}")
+    raise SystemExit("Avbryter utan att skriva index.html eftersom en eller flera menyer saknas.")
 
 # =====================
 # SKAPA INDEX.HTML
@@ -295,5 +333,17 @@ html = f"""
 </html>
 """
 
-Path(OUTPUT_FILE).write_text(html, encoding="utf-8")
-print("✅ index.html är uppdaterad! Öppna filen för att se resultatet.")
+output_path = Path(OUTPUT_FILE)
+
+# Om enda skillnaden är tidsstämpeln behöver vi inte skapa en ny commit.
+def without_timestamp(value):
+    return re.sub(r"Uppdaterad: \d{4}-\d{2}-\d{2} \d{2}:\d{2}", "Uppdaterad: <TIMESTAMP>", value)
+
+if output_path.exists():
+    old_html = output_path.read_text(encoding="utf-8")
+    if without_timestamp(old_html) == without_timestamp(html):
+        print("ℹ️ Menyinnehållet är oförändrat. Ingen fil behöver skrivas om.")
+        raise SystemExit(0)
+
+output_path.write_text(html, encoding="utf-8")
+print("✅ index.html är uppdaterad!")
