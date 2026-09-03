@@ -140,24 +140,72 @@ def fetch_rydbergs_pdf_text():
 # PARSING LOGIK
 # =====================
 
+def extract_cirkeln_menu(raw_text):
+    """Hämta dagens rätt från Cirkeln utan att förväxla med öppettider.
+
+    På Cirkeln står menyernas veckodagar som egna rader, t.ex. "Torsdag".
+    I öppettiderna står däremot "Torsdag: 11:00-13:30". Genom att bara
+    acceptera en rad som EXAKT motsvarar veckodagen undviker vi den kollisionen.
+    """
+    normalized_text = raw_text.replace("\xa0", " ").replace("\r", "\n")
+    lines = [re.sub(r"\s+", " ", line).strip() for line in normalized_text.split("\n")]
+    lines = [line for line in lines if line]
+
+    weekdays = set(WEEKDAYS.values())
+    stop_headings = {
+        "VECKANS VEGETARISKA",
+        "OMELETTER",
+        "SALLADER",
+        "KONTAKT",
+        "ÖPPETTIDER",
+    }
+
+    candidates = []
+
+    for i, line in enumerate(lines):
+        # Exakt veckodag: "Torsdag" matchar, "Torsdag: 11:00-13:30" gör det inte.
+        if line.upper() != TODAY:
+            continue
+
+        menu_lines = []
+        for next_line in lines[i + 1:]:
+            upper = next_line.upper()
+
+            if upper in weekdays or upper in stop_headings:
+                break
+
+            # Extra skydd mot en eventuell framtida ändring av öppettidsformatet.
+            if re.fullmatch(r"(?:\d{1,2}[:.]\d{2})\s*[-–—]\s*(?:\d{1,2}[:.]\d{2})", next_line):
+                continue
+
+            menu_lines.append(next_line)
+
+        candidate = "\n".join(menu_lines).strip()
+        if candidate:
+            # En riktig lunchmeny består normalt av mattext och är klart längre
+            # än en ensam öppettid eller annan kort etikett.
+            score = len(candidate)
+            if re.search(r"\b(?:potatis|sås|ris|fisk|lax|kyckling|biff|kött|rödtunga|grönsak|smör|sallad)\w*\b", candidate, re.I):
+                score += 1000
+            candidates.append((score, candidate))
+
+    if not candidates:
+        return "Ingen meny hittades för idag."
+
+    # Om sidan någon gång skulle innehålla flera exakta "Torsdag" väljer vi
+    # den kandidat som mest liknar en faktisk meny.
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return clean_lines(candidates[0][1])
+
+
 def extract_today_menu(raw_text, restaurant_name=""):
     if not TODAY:
         return "Ingen lunch idag (Helg)."
 
-    # Cirkeln har även veckodagar under avsnittet "Öppettider".
-    # Begränsa därför sökningen till själva lunchmenyn så att exempelvis
-    # "Torsdag: 11:00-13:30" aldrig kan feltolkas som dagens rätt.
     if restaurant_name == "Restaurang Cirkeln":
-        lunch_start = re.search(r"\bLunchmeny\b", raw_text, re.I)
-        if lunch_start:
-            raw_text = raw_text[lunch_start.end():]
+        return extract_cirkeln_menu(raw_text)
 
-        contact_start = re.search(r"(?:^|\n)\s*Kontakt\s*(?:\n|$)", raw_text, re.I)
-        if contact_start:
-            raw_text = raw_text[:contact_start.start()]
-
-    # Regex som letar efter dagens namn fram till nästa vardag eller slut på text.
-    # Ordet avgränsas så att vi inte matchar delsträngar i annan text.
+    # Generisk parser för FEI och Rydbergs.
     pattern = rf"\b{TODAY}\b(.*?)(?:\bMÅNDAG\b|\bTISDAG\b|\bONSDAG\b|\bTORSDAG\b|\bFREDAG\b|$)"
     match = re.search(pattern, raw_text, re.S | re.I)
 
