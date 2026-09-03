@@ -1,48 +1,55 @@
-name: Uppdatera Lunchmeny
+name: Uppdatera lunchmeny
 
 on:
   schedule:
-    - cron: '0 6 * * 1-5' # Körs vardagar ca 07:00
-  workflow_dispatch:      # Knapp för att köra manuellt
+    # Flera försök på morgonen. Minuterna är medvetet inte :00 eftersom
+    # GitHub Actions har högre belastning vid heltimme.
+    - cron: '17 7 * * 1-5'
+      timezone: 'Europe/Stockholm'
+    - cron: '17 8 * * 1-5'
+      timezone: 'Europe/Stockholm'
+    - cron: '17 9 * * 1-5'
+      timezone: 'Europe/Stockholm'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-lunch-menu
+  cancel-in-progress: false
 
 jobs:
-  build:
+  update:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # VIKTIGT: Ger roboten skrivrättigheter
 
     steps:
-      - name: 1. Checka ut koden
+      - name: Checka ut koden
         uses: actions/checkout@v4
 
-      - name: 2. Installera Python
-        uses: actions/setup-python@v4
+      - name: Installera Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
+          cache: 'pip'
 
-      - name: 3. Installera bibliotek (utan fil)
-        run: |
-          pip install requests beautifulsoup4 pdfplumber
+      - name: Installera beroenden
+        run: pip install -r requirements.txt
 
-      - name: 4. Kontrollera att filen finns
-        run: |
-          ls -R
-          if [ ! -f build.py ]; then echo "FEL: build.py saknas!"; exit 1; fi
-
-      - name: 5. Kör lunch-skriptet
+      - name: Bygg dagens lunchsida
+        env:
+          TZ: Europe/Stockholm
         run: python build.py
 
-      - name: 6. Spara och publicera
+      - name: Spara och publicera om något ändrats
         run: |
-          git config --global user.name "Lunch-Bot"
-          git config --global user.email "bot@noreply.github.com"
-          git add index.html
-          
-          # Kolla om något ändrats
-          if git diff --staged --quiet; then
-            echo "Inga ändringar att spara."
-          else
-            git commit -m "Uppdaterade menyn automatiskt"
-            git push
-            echo "✅ index.html uppdaterad och pushad!"
+          if git diff --quiet -- index.html; then
+            echo "Ingen ändring i index.html – inget att publicera."
+            exit 0
           fi
+
+          git config user.name "Lunch-Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Uppdatera lunchmeny $(TZ=Europe/Stockholm date +%F)"
+          git push
