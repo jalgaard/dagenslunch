@@ -143,15 +143,28 @@ def fetch_rydbergs_pdf_text():
 def extract_cirkeln_menu(raw_text):
     """Hämta dagens rätt från Cirkeln utan att förväxla med öppettider.
 
-    På Cirkeln står menyernas veckodagar som egna rader, t.ex. "Torsdag".
-    I öppettiderna står däremot "Torsdag: 11:00-13:30". Genom att bara
-    acceptera en rad som EXAKT motsvarar veckodagen undviker vi den kollisionen.
+    Cirkeln har HTML-markup mitt inne i vissa veckodagsrubriker. När BeautifulSoup
+    gör om HTML till text kan t.ex. "Torsdag" därför bli "Torsd\nag".
+    Vi fogar först ihop sådana fragmenterade veckodagar och accepterar sedan bara
+    en veckodag som står på en egen rad. "Torsdag: 11:00-13:30" under
+    öppettiderna matchar därmed aldrig.
     """
     normalized_text = raw_text.replace("\xa0", " ").replace("\r", "\n")
-    lines = [re.sub(r"\s+", " ", line).strip() for line in normalized_text.split("\n")]
+
+    # BeautifulSoup(separator="\n") kan lägga radbrytningar mitt i ett ord om
+    # webbplatsens HTML innehåller inline-element. Återskapa därför veckodagar även
+    # om de har splittrats, t.ex. "Torsd\nag" eller "Ons\ndag".
+    canonical_days = ["MÅNDAG", "TISDAG", "ONSDAG", "TORSDAG", "FREDAG"]
+    for day in canonical_days:
+        # Tillåt valfritt whitespace mellan bokstäverna, men inte att vi börjar/slutar
+        # mitt i ett annat ord. re.I gör att både "Torsdag" och "TORSDAG" matchar.
+        fragmented = r"(?<!\w)" + r"\s*".join(re.escape(ch) for ch in day) + r"(?!\w)"
+        normalized_text = re.sub(fragmented, day, normalized_text, flags=re.I)
+
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in normalized_text.split("\n")]
     lines = [line for line in lines if line]
 
-    weekdays = set(WEEKDAYS.values())
+    weekdays = set(canonical_days)
     stop_headings = {
         "VECKANS VEGETARISKA",
         "OMELETTER",
@@ -190,6 +203,9 @@ def extract_cirkeln_menu(raw_text):
             candidates.append((score, candidate))
 
     if not candidates:
+        # Hjälper vid framtida layoutändringar utan att skriva ut hela webbsidan.
+        interesting = [line for line in lines if re.search(r"månd|tis|ons|tors|fre|lunchmeny|öppettider", line, re.I)]
+        print("   Cirkeln debug - relevanta rader:", interesting[:30])
         return "Ingen meny hittades för idag."
 
     # Om sidan någon gång skulle innehålla flera exakta "Torsdag" väljer vi
