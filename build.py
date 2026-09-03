@@ -140,12 +140,25 @@ def fetch_rydbergs_pdf_text():
 # PARSING LOGIK
 # =====================
 
-def extract_today_menu(raw_text):
+def extract_today_menu(raw_text, restaurant_name=""):
     if not TODAY:
         return "Ingen lunch idag (Helg)."
 
-    # Regex som letar efter DAGENS NAMN fram till nästa dag eller slut på text
-    pattern = rf"{TODAY}(.*?)(MÅNDAG|TISDAG|ONSDAG|TORSDAG|FREDAG|$)"
+    # Cirkeln har även veckodagar under avsnittet "Öppettider".
+    # Begränsa därför sökningen till själva lunchmenyn så att exempelvis
+    # "Torsdag: 11:00-13:30" aldrig kan feltolkas som dagens rätt.
+    if restaurant_name == "Restaurang Cirkeln":
+        lunch_start = re.search(r"\bLunchmeny\b", raw_text, re.I)
+        if lunch_start:
+            raw_text = raw_text[lunch_start.end():]
+
+        contact_start = re.search(r"(?:^|\n)\s*Kontakt\s*(?:\n|$)", raw_text, re.I)
+        if contact_start:
+            raw_text = raw_text[:contact_start.start()]
+
+    # Regex som letar efter dagens namn fram till nästa vardag eller slut på text.
+    # Ordet avgränsas så att vi inte matchar delsträngar i annan text.
+    pattern = rf"\b{TODAY}\b(.*?)(?:\bMÅNDAG\b|\bTISDAG\b|\bONSDAG\b|\bTORSDAG\b|\bFREDAG\b|$)"
     match = re.search(pattern, raw_text, re.S | re.I)
 
     if not match:
@@ -173,7 +186,7 @@ for r in RESTAURANTS:
         errors.append(f"{r['name']}: kunde inte hämta källan")
         continue
 
-    lunch = extract_today_menu(raw)
+    lunch = extract_today_menu(raw, r["name"])
     if lunch == "Ingen meny hittades för idag.":
         errors.append(f"{r['name']}: dagens meny kunde inte hittas i källan")
         continue
